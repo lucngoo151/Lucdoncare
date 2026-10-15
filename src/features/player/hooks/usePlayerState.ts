@@ -19,6 +19,7 @@ const EMPTY_STATE: PlayerState = {
   miniPlayerStyle: "default",
   accentVariant: "default",
   pauseOnDeviceChange: true,
+  discordPresence: true,
   autoplaySimilar: true,
   trackDoubleClickBehavior: "play",
   defaultPlaybackContext: "resume",

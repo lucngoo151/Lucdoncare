@@ -30,6 +30,13 @@ export function useTouchBarSync() {
   const isTogglingLikeRef = useRef(false);
   const lastStateSentRef = useRef<string>("");
   const [syncRequestTick, setSyncRequestTick] = useState(0);
+  const discordPresence = usePlayerStore((s) => s.discordPresence);
+
+  // Sync the discord presence setting on mount and on change, declared before the
+  // player state effect so the main process knows it is off before any track info arrives
+  useEffect(() => {
+    window.linerElectron?.setDiscordPresenceEnabled?.(discordPresence);
+  }, [discordPresence]);
 
   useEffect(() => {
     if (!window.linerElectron?.onTouchBarRequestSync) return;

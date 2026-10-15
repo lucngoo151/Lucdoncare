@@ -105,6 +105,7 @@ export interface LinerElectronApi {
   onBundleDownloadProgress: (cb: (progress: { percent: number; transferred: number; total: number }) => void) => () => void;
   onBundleReady: (cb: (state: any) => void) => () => void;
   touchbarUpdateState: (state: any) => void;
+  setDiscordPresenceEnabled: (enabled: boolean) => void;
   onTouchBarAction: (cb: (action: any) => void) => () => void;
   sendTouchBarAction: (action: any) => void;
   getTouchBarInitialState: () => Promise<any>;
@@ -240,6 +241,9 @@ const api: LinerElectronApi = {
   },
   touchbarUpdateState: (state) => {
     ipcRenderer.send("touchbar:update-state", state);
+  },
+  setDiscordPresenceEnabled: (enabled) => {
+    ipcRenderer.send("discord:set-enabled", enabled);
   },
   onTouchBarAction: (cb) => {
     const listener = (_event: unknown, action: any) => cb(action);
