@@ -29,6 +29,10 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
   const setPauseOnDeviceChange = usePlayerStore(
     (state) => state.setPauseOnDeviceChange,
   );
+  const discordPresence = usePlayerStore((state) => state.discordPresence);
+  const setDiscordPresence = usePlayerStore(
+    (state) => state.setDiscordPresence,
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -119,6 +123,20 @@ export function PlaybackTab({ searchQuery }: { searchQuery?: string }) {
           <ToggleSwitch
             checked={pauseOnDeviceChange}
             onChange={setPauseOnDeviceChange}
+          />
+        }
+      />
+
+      <SettingRow
+        title={t("settings.discord_presence.title")}
+        description={t("settings.discord_presence.description")}
+        titleKey="settings.discord_presence.title"
+        descKey="settings.discord_presence.description"
+        searchQuery={searchQuery}
+        control={
+          <ToggleSwitch
+            checked={discordPresence}
+            onChange={setDiscordPresence}
           />
         }
       />

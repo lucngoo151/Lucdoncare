@@ -53,6 +53,7 @@ export interface SessionState {
   miniPlayerStyle: MiniPlayerStyle;
   accentVariant: AccentVariant;
   pauseOnDeviceChange: boolean;
+  discordPresence: boolean;
   autoplaySimilar: boolean;
   trackDoubleClickBehavior: TrackDoubleClickBehavior;
   defaultPlaybackContext: DefaultPlaybackContext;
@@ -107,6 +108,7 @@ export interface PlayerStore extends PlayerState {
   setMiniPlayerStyle: (style: MiniPlayerStyle) => void;
   setAccentVariant: (variant: AccentVariant) => void;
   setPauseOnDeviceChange: (value: boolean) => void;
+  setDiscordPresence: (value: boolean) => void;
   setAutoplaySimilar: (value: boolean) => void;
   setTrackDoubleClickBehavior: (value: TrackDoubleClickBehavior) => void;
   setDefaultPlaybackContext: (value: DefaultPlaybackContext) => void;
@@ -150,6 +152,7 @@ export const usePlayerStore = create<PlayerStore>()(
       miniPlayerStyle: "default",
       accentVariant: "default",
       pauseOnDeviceChange: true,
+      discordPresence: true,
       autoplaySimilar: true,
       trackDoubleClickBehavior: "play",
       defaultPlaybackContext: "resume",
@@ -192,6 +195,8 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ accentVariant }),
       setPauseOnDeviceChange: (pauseOnDeviceChange: boolean) =>
         set({ pauseOnDeviceChange }),
+      setDiscordPresence: (discordPresence: boolean) =>
+        set({ discordPresence }),
       setAutoplaySimilar: (autoplaySimilar: boolean) =>
         set({ autoplaySimilar }),
       setTrackDoubleClickBehavior: (trackDoubleClickBehavior: TrackDoubleClickBehavior) =>
@@ -301,6 +306,7 @@ export const usePlayerStore = create<PlayerStore>()(
         miniPlayerStyle: state.miniPlayerStyle,
         accentVariant: state.accentVariant,
         pauseOnDeviceChange: state.pauseOnDeviceChange,
+        discordPresence: state.discordPresence,
         autoplaySimilar: state.autoplaySimilar,
         trackDoubleClickBehavior: state.trackDoubleClickBehavior,
         defaultPlaybackContext: state.defaultPlaybackContext,

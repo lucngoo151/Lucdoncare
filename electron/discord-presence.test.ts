@@ -33,6 +33,8 @@ describe("discord presence payload", () => {
     expect(activity.state).toBe("Artist");
     expect(activity.timestamps).toEqual({ start: 970_000, end: 1_150_000 });
     expect(activity.assets.large_image).toBe("https://i.ytimg.com/vi/x/hq.jpg");
+    expect(activity.buttons.map((b: { label: string }) => b.label)).toEqual(["Download Liner"]);
+    expect(activity.buttons.every((b: { label: string; url: string }) => b.label.length <= 32 && b.url.startsWith("https://"))).toBe(true);
   });
 
   it("clears on pause and drops non-https covers", () => {
@@ -83,6 +85,18 @@ describe("DiscordPresence over a fake discord socket", () => {
     expect(first.cmd).toBe("SET_ACTIVITY");
     expect(first.args.activity.details).toBe("pyro - slowed");
     expect(second.args.activity).toBeNull();
+
+    // settings toggle: off clears discord and ignores player updates, on resumes
+    presence.update(state(), 1_001_000);
+    await vi.waitFor(() => expect(frames.filter((f) => f.op === 1)).toHaveLength(3));
+    presence.setEnabled(false);
+    presence.update(state({ positionMs: 60_000 }), 1_031_000);
+    await vi.waitFor(() => expect(frames.filter((f) => f.op === 1)).toHaveLength(4));
+    expect(frames.filter((f) => f.op === 1)[3].body.args.activity).toBeNull();
+    presence.setEnabled(true);
+    presence.update(state(), 1_032_000);
+    await vi.waitFor(() => expect(frames.filter((f) => f.op === 1)).toHaveLength(5));
+    expect(frames.filter((f) => f.op === 1)[4].body.args.activity.details).toBe("pyro - slowed");
     presence.destroy();
   });
 });

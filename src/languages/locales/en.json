@@ -534,6 +534,10 @@
       "title": "Autoplay similar tracks",
       "description": "Automatically add similar songs when your queue ends."
     },
+    "discord_presence": {
+      "title": "Discord Rich Presence",
+      "description": "Show the track you're listening to on your Discord profile."
+    },
     "track_double_click": {
       "title": "Double-click on track",
       "description": "Choose what happens when you double-click a song card.",

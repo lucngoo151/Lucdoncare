@@ -12,6 +12,10 @@ const OP_PING = 3;
 const OP_PONG = 4;
 const RETRY_MS = 15_000;
 const LISTENING = 2;
+// discord shows up to 2 buttons (label <= 32 chars), only to people viewing the profile, not to yourself
+const BUTTONS = [
+  { label: "Download Liner", url: "https://github.com/tryliner/desktop/releases" },
+];
 
 export function encodeFrame(op: number, payload: unknown): Buffer {
   const json = Buffer.from(JSON.stringify(payload), "utf8");
@@ -47,6 +51,7 @@ export function buildActivity(state: TouchBarStatePayload, now: number): Record<
     state: field(track.artist || "Liner"),
     timestamps: durationMs > 0 ? { start, end: start + durationMs } : { start },
     ...(cover ? { assets: { large_image: cover, large_text: field(track.album || track.title) } } : {}),
+    buttons: BUTTONS,
   };
 }
 
@@ -58,14 +63,27 @@ export class DiscordPresence {
   private lastKey = "";
   private pendingKey = "";
   private pending: Record<string, unknown> | null = null;
+  private enabled = true;
 
   constructor(
     private readonly clientId: string,
     private readonly paths: string[] = defaultIpcPaths(),
   ) {}
 
+  // settings toggle: turning it off clears what discord shows; turning it on resumes on the next player update
+  setEnabled(enabled: boolean): void {
+    if (enabled === this.enabled) return;
+    this.enabled = enabled;
+    this.lastKey = "";
+    if (!enabled && this.ready) {
+      this.pending = null;
+      this.pendingKey = "none";
+      this.flush();
+    }
+  }
+
   update(state: TouchBarStatePayload, now = Date.now()): void {
-    if (!this.clientId) return;
+    if (!this.clientId || !this.enabled) return;
     const activity = buildActivity(state, now);
     // renderer sends every 250 ms; only talk to discord on track/status change or a seek (>2 s drift)
     const start = (activity?.timestamps as { start: number } | undefined)?.start ?? 0;

@@ -257,6 +257,9 @@ if (!gotTheLock) {
       updateSleepBlocker(state.status);
       discordPresence.update(state);
     });
+    ipcMain.on("discord:set-enabled", (_event, enabled: unknown) => {
+      discordPresence.setEnabled(enabled === true);
+    });
 
     overlayManager = new OverlayManager(
       path.join(__dirname, "preload.cjs"),
