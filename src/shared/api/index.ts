@@ -1,10 +1,8 @@
 export { api, mediaUrl, toMaxQualityAvatarUrl, ApiError, resolveApiErrorMessage } from "./api";
 export {
   DEFAULT_PRIMARY_API,
-  FALLBACK_EDGE_API,
   getApiBaseUrl,
   setApiBaseUrl,
-  switchToFallbackEdge,
   switchToPrimaryApi,
   initApiEndpointProbe,
   resetEndpointProbe,
@@ -56,7 +54,9 @@ export type {
 } from "@/shared/contracts";
 
 export {
+  initializeAuthSession,
   getAuthSession,
+  getAuthSessionIdentity,
   setAuthSession,
   getAccessToken,
   getSessionExpiryMs,
