@@ -34,6 +34,11 @@ import { TouchBarManager } from "./touchbar.js";
 import { OverlayManager } from "./overlay.js";
 import { BundleManager } from "./bundle-manager.js";
 import { createSleepBlocker } from "./sleep-blocker.js";
+import { DiscordPresence } from "./discord-presence.js";
+import type { TouchBarStatePayload } from "./touchbar.js";
+
+// application id from discord.com/developers/applications (public, not a secret); empty = presence off
+const DISCORD_CLIENT_ID = process.env.LINER_DISCORD_CLIENT_ID || "";
 
 // root error handling for main process
 process.on("uncaughtException", (error) => {
@@ -67,6 +72,7 @@ let mainWindow: BrowserWindow | null = null;
 let touchBarManager: TouchBarManager | null = null;
 let overlayManager: OverlayManager | null = null;
 let bundleManager: BundleManager | null = null;
+const discordPresence = new DiscordPresence(DISCORD_CLIENT_ID);
 
 // liner:// deeplink support (share links bounce here from link.tryliner.fun)
 
@@ -246,8 +252,10 @@ if (!gotTheLock) {
     touchBarManager.registerShortcut();
 
     const updateSleepBlocker = createSleepBlocker(powerSaveBlocker);
-    ipcMain.on("touchbar:update-state", (_event, state: { status: string }) => {
+    // the renderer streams player state on this channel on every platform, not only macos
+    ipcMain.on("touchbar:update-state", (_event, state: TouchBarStatePayload) => {
       updateSleepBlocker(state.status);
+      discordPresence.update(state);
     });
 
     overlayManager = new OverlayManager(
@@ -1032,6 +1040,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("will-quit", () => {
+  discordPresence.destroy();
   touchBarManager?.unregisterShortcut();
   overlayManager?.unregisterShortcut();
   overlayManager?.destroy();
