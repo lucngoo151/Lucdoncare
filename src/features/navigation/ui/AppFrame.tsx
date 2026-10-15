@@ -689,6 +689,13 @@ export default function AppFrame({ children }: AppFrameProps) {
         if (e.currentTarget.scrollTop !== 0) e.currentTarget.scrollTop = 0;
       }}
     >
+      {window.linerElectron?.platform === "win32" && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-auto absolute inset-x-0 top-0 z-[19] h-[32px]"
+          data-native-window-drag-strip
+        />
+      )}
       {hasCustomBg && backgroundImage && (
         <div
           className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-5xl"

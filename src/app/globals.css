@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* Native Windows drag regions let the OS handle snap-to-edge for this
+   frameless window. Keep interactive controls outside of those regions. */
+html[data-platform="win32"] [data-window-drag],
+html[data-platform="win32"] [data-native-window-drag-strip] {
+  -webkit-app-region: drag;
+}
+
+html[data-platform="win32"] button,
+html[data-platform="win32"] a,
+html[data-platform="win32"] input,
+html[data-platform="win32"] textarea,
+html[data-platform="win32"] select,
+html[data-platform="win32"] label,
+html[data-platform="win32"] [role="button"],
+html[data-platform="win32"] [role="tab"],
+html[data-platform="win32"] [role="menuitem"],
+html[data-platform="win32"] [role="slider"],
+html[data-platform="win32"] [role="switch"],
+html[data-platform="win32"] [role="checkbox"],
+html[data-platform="win32"] [role="radio"],
+html[data-platform="win32"] [role="option"],
+html[data-platform="win32"] [data-no-window-drag],
+html[data-platform="win32"] .no-drag {
+  -webkit-app-region: no-drag;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
 
 :root {
@@ -185,6 +211,11 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+html[data-platform="win32"],
+html[data-platform="win32"] body {
+  background: var(--bg-canvas);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
