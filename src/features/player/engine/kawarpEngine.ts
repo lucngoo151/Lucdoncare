@@ -498,6 +498,17 @@ export class KawarpEngine {
 
   private renderLoop = (timestamp: number) => {
     if (!this.isPlaying) return;
+
+    // backgroundThrottling is disabled in the electron windows, so rAF keeps
+    // firing while the window is hidden (esp. unreliable occlusion on linux).
+    // skip the render work and keep the frame clock fresh so returning to the
+    // window neither jumps nor fast-forwards the animation.
+    if (typeof document !== "undefined" && document.hidden) {
+      this.lastFrameTime = timestamp;
+      this.animationId = requestAnimationFrame(this.renderLoop);
+      return;
+    }
+
     const dt = (timestamp - this.lastFrameTime) / 1000;
     this.lastFrameTime = timestamp;
     this.accumulatedTime += dt * this.animationSpeed;
