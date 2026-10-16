@@ -55,6 +55,7 @@ export function useWindowDrag({
   enableDoubleClickMaximize = true,
 }: WindowDragOptions = {}) {
   useEffect(() => {
+    const usesNativeWindowsDrag = window.linerElectron?.platform === "win32";
     let isMouseDown = false;
     let isDragging = false;
     let startScreenX = 0;
@@ -150,11 +151,15 @@ export function useWindowDrag({
       window.linerElectron?.toggleMaximize();
     };
 
-    window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+    if (!usesNativeWindowsDrag) {
+      window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+    }
     window.addEventListener("dblclick", handleDoubleClick, { capture: true });
 
     return () => {
-      window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+      if (!usesNativeWindowsDrag) {
+        window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+      }
       window.removeEventListener("dblclick", handleDoubleClick, { capture: true });
       window.removeEventListener("pointermove", handlePointerMove, { capture: true });
       window.removeEventListener("pointerup", handlePointerUp, { capture: true });

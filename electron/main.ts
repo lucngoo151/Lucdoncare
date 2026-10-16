@@ -105,8 +105,11 @@ function createWindow() {
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     frame: false,
-    transparent: true,
-    backgroundColor: "#00000000",
+    // Electron's transparent frameless windows do not participate in Windows
+    // Snap Assist. Keep transparency on other platforms and use the app canvas
+    // color around the rounded renderer surface on Windows.
+    transparent: process.platform !== "win32",
+    backgroundColor: process.platform === "win32" ? "#e4e4e7" : "#00000000",
     hasShadow: false,
     fullscreenable: true,
     webPreferences: {

@@ -17,6 +17,12 @@ initClientVisitorSession();
 
 const rootElement = document.getElementById("root");
 
+// Frameless Windows windows need native draggable regions so Windows can
+// apply its edge snapping behavior during a title bar drag.
+if (window.linerElectron?.platform) {
+  document.documentElement.dataset.platform = window.linerElectron.platform;
+}
+
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
