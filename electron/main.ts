@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell, screen, dialog, session, nativeImag
 import { autoUpdater } from "electron-updater";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import dns from "node:dns";
 import net from "node:net";
 import tls from "node:tls";
@@ -307,7 +308,99 @@ if (!gotTheLock) {
       return app.getVersion();
     });
 
-    ipcMain.handle("app:set-icon", async (_event, dataUrl: string) => {
+    let lastIconBytes: Buffer | null = null;
+
+    // linux dash/taskbar/launcher icons come from the freedesktop icon theme,
+    // not from the window (wayland has no window-icon protocol at all, and
+    // gnome ignores _NET_WM_ICON), so persist the rendered branding icon into
+    // the user-level hicolor theme and refresh caches best-effort.
+    //
+    // sizes mirror every one the .deb ships in /usr/share/icons/hicolor so the
+    // dock keeps exact-match resolution across the whole range (an
+    // exact 48px hit beats a themed lookup into our 512px icon).
+    const HICON_SIZES = [16, 32, 48, 64, 128, 256, 512] as const;
+
+    const linuxDataHome = () =>
+      process.env.XDG_DATA_HOME && path.isAbsolute(process.env.XDG_DATA_HOME)
+        ? process.env.XDG_DATA_HOME
+        : path.join(os.homedir(), ".local", "share");
+
+    const appIconPaths = (iconName: string) =>
+      HICON_SIZES.map((size) => {
+        const dir = path.join(
+          linuxDataHome(),
+          "icons",
+          "hicolor",
+          `${size}x${size}`,
+          "apps",
+        );
+        return { size, dir, file: path.join(dir, `${iconName}.png`) };
+      });
+
+    const refreshLinuxIconCaches = () => {
+      const dataHome = linuxDataHome();
+      const tryOnce = (cmd: string, args: string[]) => {
+        try {
+          // missing binaries (and their output) are ignored quietly
+          execFile(cmd, args, { timeout: 5000 }, () => {});
+        } catch {}
+      };
+      tryOnce("gtk-update-icon-cache", ["-f", "-t", path.join(dataHome, "icons", "hicolor")]);
+      tryOnce("update-desktop-database", [path.join(dataHome, "applications")]);
+    };
+
+    // electron-builder writes `desktopName` into the packaged package.json
+    // (syncDesktopName) and uses it for /usr/share/applications/<name>.desktop
+    // and the Icon= key; app.getDesktopFileName() is typed yet in this
+    // Electron, so read the field Electron would.
+    const resolveLinuxDesktopIconName = async (): Promise<string> => {
+      try {
+        const raw = await fs.promises.readFile(
+          path.join(app.getAppPath(), "package.json"),
+          "utf8",
+        );
+        const desktopName = JSON.parse(raw)?.desktopName as unknown;
+        if (typeof desktopName === "string" && desktopName.trim()) {
+          return desktopName.trim();
+        }
+      } catch {}
+      return "liner";
+    };
+
+    const installLinuxAppIcon = async (iconName: string, png: Buffer) => {
+      const source = nativeImage.createFromBuffer(png);
+      if (source.isEmpty()) return;
+      for (const { size, dir, file } of appIconPaths(iconName)) {
+        await fs.promises.mkdir(dir, { recursive: true });
+        // the incoming bitmap IS 512px; keep its exact bytes there and
+        // downscale for every other directory in the theme
+        if (size === 512) {
+          await fs.promises.writeFile(file, png);
+        } else {
+          await fs.promises.writeFile(
+            file,
+            source.resize({ width: size, height: size, quality: "best" }).toPNG(),
+          );
+        }
+      }
+      refreshLinuxIconCaches();
+    };
+
+    const removeLinuxAppIcon = async (iconName: string) => {
+      for (const { file } of appIconPaths(iconName)) {
+        // force: no error when the file is already gone (idempotent)
+        await fs.promises.rm(file, { force: true });
+      }
+      refreshLinuxIconCaches();
+    };
+
+    ipcMain.handle(
+      "app:set-icon",
+      async (
+        _event,
+        dataUrl: string,
+        options?: { isDefault?: boolean },
+      ) => {
       if (!mainWindow || !dataUrl) return;
       try {
         const icon = nativeImage.createFromDataURL(dataUrl);
@@ -316,11 +409,34 @@ if (!gotTheLock) {
           if (process.platform === "darwin" && app.dock) {
             app.dock.setIcon(icon);
           }
+          // linux: apply to the icon dash/taskbar actually shows. only in the
+          // packaged app so dev runs do not pollute the user's icon theme.
+          if (process.platform === "linux" && app.isPackaged) {
+            const png = /^data:image\/png;base64,(.+)$/.exec(dataUrl)?.[1];
+            if (png) {
+              const bytes = Buffer.from(png, "base64");
+              if (options?.isDefault) {
+                // branding back to stock: drop the injected icon and let the
+                // packaged system icon win again
+                lastIconBytes = null;
+                await removeLinuxAppIcon(
+                  await resolveLinuxDesktopIconName(),
+                );
+              } else if (!lastIconBytes || !lastIconBytes.equals(bytes)) {
+                lastIconBytes = bytes;
+                await installLinuxAppIcon(
+                  await resolveLinuxDesktopIconName(),
+                  bytes,
+                );
+              }
+            }
+          }
         }
       } catch (err) {
         console.error("\x1b[41;37m icon \x1b[0m set-icon error:", err);
       }
-    });
+      },
+    );
 
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       const responseHeaders = { ...(details.responseHeaders || {}) };
