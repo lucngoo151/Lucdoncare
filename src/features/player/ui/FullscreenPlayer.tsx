@@ -184,6 +184,13 @@ function BraccatoLyricsView({ lyrics }: BraccatoLyricsViewProps) {
     let lastReportedIndex = -1;
 
     const checkActiveLine = () => {
+      // backgroundThrottling is off in the electron windows, so this rAF loop
+      // keeps firing while the window is hidden (occlusion detection is
+      // unreliable on linux). skip the scan entirely while hidden.
+      if (typeof document !== "undefined" && document.hidden) {
+        syncRafId = requestAnimationFrame(checkActiveLine);
+        return;
+      }
       const audioEl = document.getElementById("liner-audio") as HTMLAudioElement | null;
       if (audioEl && !Number.isNaN(audioEl.currentTime)) {
         const currentMs = audioEl.currentTime * 1000;
